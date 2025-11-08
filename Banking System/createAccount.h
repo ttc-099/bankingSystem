@@ -5,75 +5,61 @@
 #include <stdlib.h>
 #include <string.h>
 #include <time.h>
+#include "helpers.h"
 
-// 1. Setup files ================================================================
+// 1. Setup files
 
-// helper to clear input buffer
-void clearInputBuffer()
-{
-    while (getchar() != '\n');
+long generateAccNumber() {
+    long choices[] = {
+        rand() % 9000000 + 1000000,
+        rand() % 90000000 + 10000000,
+        rand() % 900000000 + 100000000
+    };
+    return choices[rand() % 3];  // Randomly pick one of the three
 }
 
-// helper to generate random 7–9 digit account number
-long generateAccountNumber()
-{
-    int length = (rand() % 3) + 7;  // 7, 8, or 9 digits
-    long number = 0;
-
-    for (int i = 0; i < length; i++)
-    {
-        number = number * 10 + (rand() % 10);
-    }
-
-    return number;
-}
-
-// 2. Main ======================================================================
-
-void createAccount()
-{
+// 2. Main
+void createAccount() {
     char name[50];
     int id;
     int accountType;
-    int pin;
+    int pin; 
     long accountNumber;
     double balance = 0.00;
 
-    srand(time(NULL));
+    srand(time(NULL)); // for the random number generator
 
-    // ----- NAME -----
-    do
-    {
+    // 2.1 Name
+    do {
         printf("Enter your full name: ");
-        getchar();
         fgets(name, sizeof(name), stdin);
-
-        size_t len = strlen(name);
-        if (len > 0 && name[len - 1] == '\n')
-            name[len - 1] = '\0';
-
-        if (strlen(name) == 0)
+        
+        // Remove newline
+        name[strcspn(name, "\n")] = '\0';
+        
+        if (strlen(name) == 0) {
             printf("Invalid input. Name cannot be empty.\n");
-        else
+            clearInputBuffer();  // Clear any extra input
+        } else {
             break;
-    } while (1);
-
-    // ----- ID -----
-    do
-    {
-        printf("Enter your ID: ");
-        if (scanf("%d", &id) != 1)
-        {
-            printf("Invalid input. Try again.\n");
-            clearInputBuffer();
         }
-        else
-            break;
     } while (1);
 
-    // ----- ACCOUNT TYPE -----
-    do
-    {
+    // 2.2 ID
+    do {
+        printf("Enter your ID: ");
+        if (scanf("%d", &id) != 1) {
+            printf("Invalid input. Please enter numbers only.\n");
+            clearInputBuffer();
+        } else if (id <= 0) {
+            printf("ID must be a positive number.\n");
+        } else {
+            break;
+        }
+    } while (1);
+
+    // 2.3 Account Type 
+    do {
         printf("Would you like a [1]Savings Account or [2]Current Account? ");
         if (scanf("%d", &accountType) != 1 || (accountType != 1 && accountType != 2))
         {
@@ -84,9 +70,9 @@ void createAccount()
             break;
     } while (1);
 
-    // ----- PIN -----
-    do
-    {
+    // 2.4 PIN
+
+    do {
         printf("Enter your 4-digit PIN: ");
         if (scanf("%d", &pin) != 1 || pin < 1000 || pin > 9999)
         {
@@ -95,12 +81,13 @@ void createAccount()
         }
         else
             break;
-    } while (1);
+     } while (1);
 
-    // ----- ACCOUNT NUMBER -----
-    accountNumber = generateAccountNumber();
+     // 2.5 Generate Account Number
 
-    // ----- SAVE TO FILE -----
+     accountNumber = generateAccNumber();
+
+     // 2.6 Save to File
     char filename[100];
     sprintf(filename, "database/%ld.txt", accountNumber);
 
@@ -122,6 +109,20 @@ void createAccount()
     printf("\nAccount created successfully!\n");
     printf("Account Number: %ld\n", accountNumber);
     printf("Saved to: %s\n", filename);
+
+    //2.7 Update Index File
+    FILE *indexFile = fopen("database/index.txt", "a");  // "a" = append
+    if (indexFile)
+    {
+        fprintf(indexFile, "%ld\n", accountNumber);
+        fclose(indexFile);
+    }
+    else
+    {
+        printf("Warning: Could not update index file.\n");
+    }
+
 }
+
 
 #endif
