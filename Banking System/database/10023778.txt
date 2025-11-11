@@ -1,0 +1,6 @@
+Account Number: 10023778
+Name: Sheri
+ID: 12345678
+Account Type: Savings
+PIN: 1234
+Balance: 12345.00

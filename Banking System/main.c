@@ -1,6 +1,8 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include "createAccount.h"   
+#include "deleteAccount.h"
+#include "deposit.h"
 
 int main()
 {
@@ -32,10 +34,10 @@ int main()
             createAccount(); 
             break;
         case 2:
-            printf("Delete Account feature coming soon.\n");
+            deleteAccount();
             break;
         case 3:
-            printf("Deposit feature coming soon.\n");
+            deposit();
             break;
         case 4:
             printf("Withdrawal feature coming soon.\n");
@@ -44,7 +46,7 @@ int main()
             printf("Remittance feature coming soon.\n");
             break;
         case 6:
-            printf("Goodbye!\n");
+            printf("Program exited. Have a good day.\n");
             exit(0);
         default:
             printf("Invalid option. Please try again.\n");
