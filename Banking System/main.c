@@ -3,6 +3,8 @@
 #include "createAccount.h"   
 #include "deleteAccount.h"
 #include "deposit.h"
+#include "withdraw.h"
+#include "remittance.h"
 
 int main()
 {
@@ -40,13 +42,13 @@ int main()
             deposit();
             break;
         case 4:
-            printf("Withdrawal feature coming soon.\n");
+            withdraw();
             break;
         case 5:
-            printf("Remittance feature coming soon.\n");
+            remittance();
             break;
         case 6:
-            printf("Program exited. Have a good day.\n");
+            printf("Program exited. Have a good day!\n");
             exit(0);
         default:
             printf("Invalid option. Please try again.\n");

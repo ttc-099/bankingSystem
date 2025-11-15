@@ -101,6 +101,9 @@ void deposit()
 
     printf("\nDeposit successful!\n");
     printf("New balance: RM%.2f\n", balance);
+
+    long accNumber = atol(accountNumber);
+    logTransaction("deposit", accNumber, depositAmount);
 }
 
 #endif

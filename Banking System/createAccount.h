@@ -7,7 +7,7 @@
 #include <time.h>
 #include "helpers.h"
 
-// 1. Setup files
+// 1. Setup functions
 
 long generateAccNumber() {
     long choices[] = {
@@ -28,6 +28,8 @@ void createAccount() {
     double balance = 0.00;
 
     srand(time(NULL)); // for the random number generator
+
+    printf("\n=== CREATE ACCOUNT ===\n");
 
     // 2.1 Name
     do {
@@ -121,6 +123,8 @@ void createAccount() {
     {
         printf("Warning: Could not update index file.\n");
     }
+
+    logTransaction("create_account", accountNumber, 0.00);
 
 }
 

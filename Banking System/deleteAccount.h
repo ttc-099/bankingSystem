@@ -10,6 +10,9 @@
 // --- USE --- Delete an existing bank account
 void deleteAccount()
 {
+
+    printf("\n=== DELETE ACCOUNT ===\n");
+
     FILE *indexFile = fopen("database/index.txt", "r");
     if (!indexFile)
     {
@@ -106,6 +109,8 @@ void deleteAccount()
     {
         printf("\nError: Could not delete file (maybe it doesn't exist?).\n");
     }
+
+    logTransaction("delete_account", atol(selectedAccount), 0.00);
 }
 
 #endif
