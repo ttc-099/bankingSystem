@@ -3,3 +3,13 @@
 [2025-11-13 21:22:17] deposit - Account: 100002391 - Amount: RM 25000.00
 [2025-11-18 15:50:44] remittance_out - Account: 10023778 - Amount: RM -510.00
 [2025-11-18 15:50:44] remittance_in - Account: 100002391 - Amount: RM 500.00
+[2025-11-24 21:30:27] create_account - Account: 10001795 - Amount: RM 0.00
+[2025-11-24 21:30:27] create account - Account: 0 - Amount: RM 0.00
+[2025-11-24 21:33:23] session ended - Account: 0 - Amount: RM 0.00
+[2025-11-24 21:33:39] session ended - Account: 0 - Amount: RM 0.00
+[2025-11-24 21:34:16] session ended - Account: 0 - Amount: RM 0.00
+[2025-11-24 21:49:28] create_account - Account: 100020367 - Amount: RM 0.00
+[2025-11-24 21:49:28] create account - Account: 0 - Amount: RM 0.00
+[2025-11-24 21:52:36] session ended - Account: 0 - Amount: RM 0.00
+[2025-11-24 21:58:40] create_account - Account: 1007429 - Amount: RM 0.00
+[2025-11-24 21:59:18] deposit - Account: 1007429 - Amount: RM 250.00

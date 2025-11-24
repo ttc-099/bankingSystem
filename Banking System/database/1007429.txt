@@ -1,0 +1,6 @@
+Account Number: 1007429
+Name: hytgfred
+ID: 1234
+Account Type: Savings
+PIN: 1234
+Balance: 250.00
