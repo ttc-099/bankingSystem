@@ -1,60 +1,77 @@
 #include <stdio.h>
 #include <stdlib.h>
-#include "createAccount.h"   
+#include <string.h>
+#include <time.h>
+#include "createAccount.h"
 #include "deleteAccount.h"
 #include "deposit.h"
 #include "withdraw.h"
 #include "remittance.h"
+#include "helpers.h"  
+#include "helpers2.h"
+
+#ifdef _WIN32
+#define strcasecmp _stricmp
+#endif
 
 int main()
 {
-    int input;
+    char input[20];
+    time_t now = time(NULL);
+    int accountCount = 0;
+
+    getAccountCount(&accountCount);  // get current account count
+
+    printf("---- BANKING SYSTEM ----\n");
+    printf("Session started: %s", ctime(&now));
+    printf("Count of loaded accounts: %d\n\n", accountCount);
 
     while (1)
     {
-        printf("---- BANKING SYSTEM ---- \n\n"
-               "Welcome to the bank! Please select an option to start. (Enter the corresponding number.)\n"
-               "1. Create Account\n"
-               "2. Delete Account\n"
-               "3. Deposit\n"
-               "4. Withdrawal\n"
-               "5. Remittance\n"
-               "6. Quit\n"
-               "--------------------------------\n"
+        printf("Welcome to the bank! Please select an option to start.\n"
+               "1. Create Account (or 'create')\n"
+               "2. Delete Account (or 'delete')\n"
+               "3. Deposit (or 'deposit')\n"
+               "4. Withdrawal (or 'withdrawal')\n"
+               "5. Remittance (or 'remittance')\n"
+               "6. Quit (or 'quit', 'exit')\n"
                "Select Option: ");
 
-        if (scanf("%d", &input) != 1)
+        if (scanf("%19s", input) != 1)
         {
             printf("Invalid input.\n");
-            while (getchar() != '\n');
+            while (getchar() != '\n'); // clear buffer
             continue;
         }
+        while (getchar() != '\n'); // clear buffer
 
-        switch (input)
+        if (strcmp(input, "1") == 0 || strcasecmp(input, "create") == 0)
         {
-        case 1:
-            createAccount(); 
-            break;
-        case 2:
+            createAccount();
+            getAccountCount(&accountCount);  // update account count
+            printf("Current accounts: %d\n", accountCount);
+        }
+        else if (strcmp(input, "2") == 0 || strcasecmp(input, "delete") == 0)
+        {
             deleteAccount();
-            break;
-        case 3:
+            getAccountCount(&accountCount);  // update account count
+            printf("Current accounts: %d\n", accountCount);
+        }
+        else if (strcmp(input, "3") == 0 || strcasecmp(input, "deposit") == 0)
             deposit();
-            break;
-        case 4:
+        else if (strcmp(input, "4") == 0 || strcasecmp(input, "withdrawal") == 0)
             withdraw();
-            break;
-        case 5:
+        else if (strcmp(input, "5") == 0 || strcasecmp(input, "remittance") == 0)
             remittance();
-            break;
-        case 6:
+        else if (strcmp(input, "6") == 0 || strcasecmp(input, "quit") == 0 || strcasecmp(input, "exit") == 0)
+        {
             printf("Program exited. Have a good day!\n");
             exit(0);
-        default:
-            printf("Invalid option. Please try again.\n");
         }
+        else
+            printf("Invalid option. Please try again.\n");
 
-        printf("\n\n"); 
+        printf("\n"); // spacing for readability
     }
 
     return 0;
