@@ -1,6 +1,0 @@
-Account Number: 10001795
-Name: Lee Ann Smith
-ID: 1234
-Account Type: Savings
-PIN: 1234
-Balance: 0.00

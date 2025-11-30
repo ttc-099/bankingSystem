@@ -4,113 +4,123 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include "helpers.h"
+#include <dirent.h>       // for directory scanning
+#include "helpers_CreateDelete.h"
 
-
-// --- USE --- Delete an existing bank account
-void deleteAccount()
-{
+// --- Delete an existing bank account ---
+static void deleteAccount() {
 
     printf("\n=== DELETE ACCOUNT ===\n");
 
-    FILE *indexFile = fopen("database/index.txt", "r");
-    if (!indexFile)
-    {
-        printf("No index file found! (No accounts exist yet)\n");
+    // --- Early check: does database folder contain any .txt account files? ---
+    DIR *dir = opendir("database");
+    if (!dir) {
+        printf("Database folder not found.\n");
         return;
     }
 
-    // --- USE --- Read all account numbers
-    char accounts[100][20]; // up to 100 accs max
+    struct dirent *entry;
+    int fileFound = 0;
+    while ((entry = readdir(dir)) != NULL) {
+        if (entry->d_type == DT_REG && strstr(entry->d_name, ".txt") != NULL && strcmp(entry->d_name, "index.txt") != 0) {
+            fileFound = 1;
+            break;
+        }
+    }
+    closedir(dir);
+
+    if (!fileFound) {
+        printf("No accounts to delete.\n");
+        return;
+    }
+
+    // --- Load index file ---
+    FILE *indexFile = fopen("database/index.txt", "r");
+    if (!indexFile) {
+        printf("No accounts exist yet.\n");
+        return;
+    }
+
+    char accounts[100][20]; // up to 100 accounts max
     int count = 0;
-    while (fgets(accounts[count], sizeof(accounts[count]), indexFile))
-    {
+
+    while (fgets(accounts[count], sizeof(accounts[count]), indexFile)) {
         accounts[count][strcspn(accounts[count], "\n")] = '\0'; // remove newline
         count++;
     }
     fclose(indexFile);
 
-    if (count == 0)
-    {
+    if (count == 0) {
         printf("No accounts to delete.\n");
         return;
     }
 
-    // --- USE --- Display account list
+    // --- Display account list ---
     printf("\n--- Existing Accounts ---\n");
-    for (int i = 0; i < count; i++)
-    {
+    for (int i = 0; i < count; i++) {
         printf("%d. %s\n", i + 1, accounts[i]);
     }
 
-    // --- USE --- Ask user to choose which to delete
+    // --- Ask which account to delete ---
     int choice;
     printf("\nEnter the number of the account to delete: ");
-    if (scanf("%d", &choice) != 1 || choice < 1 || choice > count)
-    {
+    if (scanf("%d", &choice) != 1 || choice < 1 || choice > count) {
         printf("Invalid choice.\n");
         clearInputBuffer();
         return;
     }
+    clearInputBuffer();
 
     char selectedAccount[20];
     strcpy(selectedAccount, accounts[choice - 1]);
 
-    // --- USE --- Confirm identity
+    // --- Confirm deletion ---
     char enteredAccount[20];
     int last4ID, pin;
-    printf("\nTo confirm deletion, please enter the following:\n");
 
+    printf("\nTo confirm deletion, enter the following:\n");
     printf("Account number: ");
-    scanf("%s", enteredAccount);
+    scanf("%19s", enteredAccount);
+    clearInputBuffer();
 
     printf("Last 4 digits of your ID: ");
-    scanf("%d", &last4ID);
+    if (scanf("%d", &last4ID) != 1) { clearInputBuffer(); return; }
+    clearInputBuffer();
 
     printf("4-digit PIN: ");
-    scanf("%d", &pin);
+    if (scanf("%d", &pin) != 1) { clearInputBuffer(); return; }
+    clearInputBuffer();
 
-    // --- USE --- Check account match
-    if (strcmp(selectedAccount, enteredAccount) != 0)
-    {
+    if (strcmp(selectedAccount, enteredAccount) != 0) {
         printf("\nError: Account number mismatch.\n");
         return;
     }
 
-    // --- USE --- Delete account file
+    // --- Delete account file ---
     char filename[100];
     sprintf(filename, "database/%s.txt", selectedAccount);
 
-    if (remove(filename) == 0)
-    {
+    if (remove(filename) == 0) {
         printf("\nAccount file deleted successfully.\n");
 
-        // --- USE --- Update index file (rewrite without deleted account)
+        // --- Update index file ---
         FILE *tempFile = fopen("database/temp.txt", "w");
-        if (!tempFile)
-        {
-            printf("Error updating index file.\n");
-            return;
-        }
+        if (!tempFile) { printf("Error updating index file.\n"); return; }
 
-        for (int i = 0; i < count; i++)
-        {
+        for (int i = 0; i < count; i++) {
             if (i != (choice - 1))
                 fprintf(tempFile, "%s\n", accounts[i]);
         }
-
         fclose(tempFile);
+
         remove("database/index.txt");
         rename("database/temp.txt", "database/index.txt");
 
         printf("Index updated.\n");
+        logTransaction("delete_account", atol(selectedAccount), 0.0);
+    } else {
+        printf("\nError: Could not delete account file.\n");
     }
-    else
-    {
-        printf("\nError: Could not delete file (maybe it doesn't exist?).\n");
-    }
-
-    logTransaction("delete_account", atol(selectedAccount), 0.00);
 }
 
 #endif

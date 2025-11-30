@@ -1,0 +1,6 @@
+Account Number: 100009774
+Name: Lee Ann Smith
+IC: 060325010552
+Account Type: Savings
+PIN: 1234
+Balance: 25000.00

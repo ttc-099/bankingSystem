@@ -5,128 +5,160 @@
 #include <stdlib.h>
 #include <string.h>
 #include <time.h>
-#include "helpers.h"
+#include "helpers_CreateDelete.h"
+#include "helpers3.h"   // contains isValidIC()
 
-// 1. Setup functions
+// ----------------------------------------------------------
+// Generate a random 9-digit account number that is unique
+// ----------------------------------------------------------
+static long generateAccNumber() {
+    long accNumber;
+    FILE *indexFile;
+    char line[20];
+    int unique;
 
-long generateAccNumber() {
-    long choices[] = {
-        rand() % 9000000 + 1000000,
-        rand() % 90000000 + 10000000,
-        rand() % 900000000 + 100000000
-    };
-    return choices[rand() % 3];  // Randomly pick one of the three
+    srand((unsigned int)time(NULL));
+
+    do {
+        accNumber = rand() % 900000000 + 100000000; // 9-digit
+        unique = 1;
+
+        indexFile = fopen("database/index.txt", "r");
+        if (indexFile != NULL) {
+            while (fgets(line, sizeof(line), indexFile)) {
+                line[strcspn(line, "\n")] = '\0';
+                if (atol(line) == accNumber) {
+                    unique = 0;
+                    break;
+                }
+            }
+            fclose(indexFile);
+        }
+    } while (!unique);
+
+    return accNumber;
 }
 
-// 2. Main
-void createAccount() {
-    char name[50];
-    int id;
-    int accountType;
-    int pin; 
-    long accountNumber;
-    double balance = 0.00;
+// ----------------------------------------------------------
+// Create a new bank account
+// ----------------------------------------------------------
+static void createAccount() {
+    Account newAccount;
+    newAccount.balance = 0.0;
 
-    srand(time(NULL)); // for the random number generator
+    printf("\n=== CREATE NEW BANK ACCOUNT ===\n");
+    clearInputBuffer();
 
-    printf("\n=== CREATE ACCOUNT ===\n");
+    // --- Name ---
+    while (1) {
+        printf("Enter full name (letters and spaces only): ");
+        if (fgets(newAccount.name, sizeof(newAccount.name), stdin) == NULL) continue;
+        newAccount.name[strcspn(newAccount.name, "\n")] = '\0';
 
-    // 2.1 Name
-    do {
-        printf("Enter your full name: ");
-        fgets(name, sizeof(name), stdin);
-        
-        // Remove newline
-        name[strcspn(name, "\n")] = '\0';
-        
-        if (strlen(name) == 0) {
-            printf("Invalid input. Name cannot be empty.\n");
-            clearInputBuffer();  // Clear any extra input
-        } else {
-            break;
+        int valid = 1;
+        for (int i = 0; newAccount.name[i] != '\0'; i++) {
+            if (isdigit(newAccount.name[i])) { valid = 0; break; }
         }
-    } while (1);
+        if (!valid || strlen(newAccount.name) == 0) {
+            printf("Invalid name.\n");
+            continue;
+        }
+        break;
+    }
 
-    // 2.2 ID
-    do {
-        printf("Enter your ID: ");
-        if (scanf("%d", &id) != 1) {
-            printf("Invalid input. Please enter numbers only.\n");
+    // --- IC ---
+    char icInput[20];
+    while (1) {
+        printf("Enter Malaysian IC (12 digits, no hyphens): ");
+        if (fgets(icInput, sizeof(icInput), stdin) == NULL) continue;
+        icInput[strcspn(icInput, "\n")] = '\0';
+
+        if (!isValidIC(icInput)) {
+            printf("Invalid IC format or state code.\n");
+            continue;
+        }
+        strcpy(newAccount.id, icInput);
+        break;
+    }
+
+    // --- Account type ---
+    int type;
+    while (1) {
+        printf("Select account type [1] Savings  [2] Current: ");
+        if (scanf("%d", &type) != 1 || (type != 1 && type != 2)) {
+            printf("Invalid selection.\n");
             clearInputBuffer();
-        } else if (id <= 0) {
-            printf("ID must be a positive number.\n");
-        } else {
-            break;
+            continue;
         }
-    } while (1);
+        newAccount.accountType = type;
+        clearInputBuffer();
+        break;
+    }
 
-    // 2.3 Account Type 
-    do {
-        printf("Would you like a [1]Savings Account or [2]Current Account? ");
-        if (scanf("%d", &accountType) != 1 || (accountType != 1 && accountType != 2))
-        {
-            printf("Invalid input. Enter 1 for Savings or 2 for Current.\n");
-            clearInputBuffer();
+    // --- PIN (strictly 4-digit numeric) ---
+    char pinInput[10];
+    int pin;
+    while (1) {
+        printf("Create a 4-digit PIN (1000-9999): ");
+        if (fgets(pinInput, sizeof(pinInput), stdin) == NULL) continue;
+        pinInput[strcspn(pinInput, "\n")] = '\0';
+
+        // Check if all digits
+        int valid = 1;
+        for (int i = 0; pinInput[i] != '\0'; i++) {
+            if (!isdigit(pinInput[i])) { valid = 0; break; }
         }
-        else
-            break;
-    } while (1);
 
-    // 2.4 PIN
-
-    do {
-        printf("Enter your 4-digit PIN: ");
-        if (scanf("%d", &pin) != 1 || pin < 1000 || pin > 9999)
-        {
-            printf("Invalid PIN. Must be 4 digits.\n");
-            clearInputBuffer();
+        if (!valid || strlen(pinInput) != 4) {
+            printf("Invalid PIN.\n");
+            continue;
         }
-        else
-            break;
-     } while (1);
 
-     // 2.5 Generate Account Number
+        pin = atoi(pinInput);
+        if (pin < 1000 || pin > 9999) {
+            printf("Invalid PIN.\n");
+            continue;
+        }
 
-     accountNumber = generateAccNumber();
+        newAccount.pin = pin;
+        break;
+    }
 
-     // 2.6 Save to File
+    // --- Generate account number ---
+    newAccount.accountNumber = generateAccNumber();
+
+    // --- Write account file ---
     char filename[100];
-    sprintf(filename, "database/%ld.txt", accountNumber);
+    sprintf(filename, "database/%ld.txt", newAccount.accountNumber);
 
     FILE *file = fopen(filename, "w");
-    if (!file)
-    {
-        printf("\nError: Folder 'database' not found.\n");
+    if (!file) {
+        printf("Error: Unable to create account file.\n");
         return;
     }
 
-    fprintf(file, "Account Number: %ld\n", accountNumber);
-    fprintf(file, "Name: %s\n", name);
-    fprintf(file, "ID: %d\n", id);
-    fprintf(file, "Account Type: %s\n", accountType == 1 ? "Savings" : "Current");
-    fprintf(file, "PIN: %d\n", pin);
-    fprintf(file, "Balance: %.2f\n", balance);
+    fprintf(file, "Account Number: %ld\n", newAccount.accountNumber);
+    fprintf(file, "Name: %s\n", newAccount.name);
+    fprintf(file, "IC: %s\n", newAccount.id);
+    fprintf(file, "Account Type: %s\n", newAccount.accountType == 1 ? "Savings" : "Current");
+    fprintf(file, "PIN: %d\n", newAccount.pin);
+    fprintf(file, "Balance: %.2f\n", newAccount.balance);
     fclose(file);
 
-    printf("\nAccount created successfully!\n");
-    printf("Account Number: %ld\n", accountNumber);
-    printf("Saved to: %s\n", filename);
-
-    //2.7 Update Index File
-    FILE *indexFile = fopen("database/index.txt", "a");  // "a" = append
-    if (indexFile)
-    {
-        fprintf(indexFile, "%ld\n", accountNumber);
+    // --- Append to index file ---
+    FILE *indexFile = fopen("database/index.txt", "a");
+    if (indexFile != NULL) {
+        fprintf(indexFile, "%ld\n", newAccount.accountNumber);
         fclose(indexFile);
-    }
-    else
-    {
-        printf("Warning: Could not update index file.\n");
+    } else {
+        printf("Warning: Unable to update index file.\n");
     }
 
-    logTransaction("create_account", accountNumber, 0.00);
+    logTransaction("create_account", newAccount.accountNumber, 0.0);
 
+    printf("\nAccount created successfully.\n");
+    printf("Assigned Account Number: %ld\n", newAccount.accountNumber);
+    printf("Record saved to: %s\n", filename);
 }
-
 
 #endif

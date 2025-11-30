@@ -3,106 +3,91 @@
 
 #include <stdio.h>
 #include <stdlib.h>
-#include <string.h>
-#include "helpers.h"
+#include "helpers_DepositWithdraw.h"
+#include <dirent.h>
 
-// --- HOW TO USE ---
-// deposit() lets a user log in using their account number + PIN,
-// then add money to their balance (0 < amount ≤ 50000).
-// The balance is updated directly in their account file.
-
-void deposit()
-{
-    char accountNumber[20];
+void deposit() {
+    char accInput[20];
     int pin;
     double depositAmount;
     double balance = 0.0;
 
-    // --- ASK FOR ACCOUNT + PIN ---
-    printf("\nEnter your Account Number: ");
-    scanf("%s", accountNumber);
+    printf("\n=== DEPOSIT ===\n");
 
-    printf("Enter your 4-digit PIN: ");
+        // --- Early check: does database folder contain any .txt account files? ---
+    DIR *dir = opendir("database");
+    if (!dir) {
+        printf("Database folder not found.\n");
+        return;
+    }
+
+    struct dirent *entry;
+    int fileFound = 0;
+    while ((entry = readdir(dir)) != NULL) {
+        if (entry->d_type == DT_REG && strstr(entry->d_name, ".txt") != NULL && strcmp(entry->d_name, "index.txt") != 0) {
+            fileFound = 1;
+            break;
+        }
+    }
+    closedir(dir);
+
+    if (!fileFound) {
+        printf("No accounts found.\n");
+        return;
+    }
+
+    printf("Enter Account Number: ");
+    scanf("%19s", accInput);
+
+    printf("Enter 4-digit PIN: ");
     scanf("%d", &pin);
+    clearInputBuffer();
 
-    // --- OPEN ACCOUNT FILE ---
-    char filename[100];
-    sprintf(filename, "database/%s.txt", accountNumber);
+    long accNumber = atol(accInput);
 
-    FILE *file = fopen(filename, "r");
-    if (!file)
-    {
+    // --- GET CURRENT BALANCE ---
+    if (getAccountBalance(accNumber, &balance) != 0) {
         printf("Error: Account not found.\n");
         return;
     }
 
-    // --- VERIFY PIN + GET CURRENT BALANCE ---
-    char line[100];
-    int storedPIN = 0;
-    int foundPIN = 0;
+    // --- PIN VERIFICATION ---
+    char filename[100];
+    sprintf(filename, "database/%ld.txt", accNumber);
 
-    while (fgets(line, sizeof(line), file))
-    {
-        if (sscanf(line, "PIN: %d", &storedPIN) == 1)
-            foundPIN = 1;
+    FILE *file = fopen(filename, "r");
+    if (!file) return;
 
-        if (sscanf(line, "Balance: %lf", &balance) == 1)
-            ; // do nothing
+    int storedPIN = -1;
+    char line[256];
+    while (fgets(line, sizeof(line), file)) {
+        if (sscanf(line, "PIN: %d", &storedPIN) == 1) break;
     }
-
     fclose(file);
 
-    if (!foundPIN || storedPIN != pin)
-    {
-        printf("Error: Incorrect PIN.\n");
+    if (pin != storedPIN) {
+        printf("Incorrect PIN.\n");
         return;
     }
 
-    // --- ASK FOR DEPOSIT AMOUNT ---
-    do
-    {
+    // --- ASK DEPOSIT AMOUNT ---
+    do {
         printf("Enter amount to deposit (max RM50,000): RM");
-        if (scanf("%lf", &depositAmount) != 1 || depositAmount <= 0 || depositAmount > 50000)
-        {
+        if (scanf("%lf", &depositAmount) != 1 || depositAmount <= 0 || depositAmount > 50000) {
             printf("Invalid amount. Try again.\n");
             clearInputBuffer();
-        }
-        else
-            break;
+        } else break;
     } while (1);
+    clearInputBuffer();
 
-    // --- UPDATE BALANCE ---
     balance += depositAmount;
 
-    // --- REWRITE ACCOUNT FILE WITH NEW BALANCE ---
-    FILE *inFile = fopen(filename, "r");
-    FILE *tempFile = fopen("database/temp.txt", "w");
-    if (!inFile || !tempFile)
-    {
+    if (updateAccountBalance(accNumber, balance) != 0) {
         printf("Error updating balance.\n");
-        if (inFile) fclose(inFile);
-        if (tempFile) fclose(tempFile);
         return;
     }
 
-    while (fgets(line, sizeof(line), inFile))
-    {
-        if (strncmp(line, "Balance:", 8) == 0)
-            fprintf(tempFile, "Balance: %.2f\n", balance);
-        else
-            fputs(line, tempFile);
-    }
-
-    fclose(inFile);
-    fclose(tempFile);
-
-    remove(filename);
-    rename("database/temp.txt", filename);
-
-    printf("\nDeposit successful!\n");
-    printf("New balance: RM%.2f\n", balance);
-
-    long accNumber = atol(accountNumber);
+    printf("Deposit successful! New balance: RM%.2f\n", balance);
     logTransaction("deposit", accNumber, depositAmount);
 }
 

@@ -1,6 +1,0 @@
-Account Number: 946279390
-Name: S
-ID: 1234
-Account Type: Savings
-PIN: 1234
-Balance: 345.00

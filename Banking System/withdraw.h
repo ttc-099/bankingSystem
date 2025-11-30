@@ -3,114 +3,96 @@
 
 #include <stdio.h>
 #include <stdlib.h>
-#include <string.h>
-#include <time.h>
-#include "helpers.h"
+#include "helpers_DepositWithdraw.h"
+#include <dirent.h>
 
-void withdraw(void) {
-    long accountNumber;
+void withdraw() {
+    long accNumber;
     int pin;
     double amount;
-    double currentBalance;
-    char filename[100];
-    char line[256];
-    
+    double balance = 0.0;
+
     printf("\n=== WITHDRAWAL ===\n");
-    
-    // Get account number
-    printf("Enter your account number: ");
-    if (scanf("%ld", &accountNumber) != 1) {
-        printf("Invalid account number.\n");
-        clearInputBuffer();
+
+        // --- Early check: does database folder contain any .txt account files? ---
+    DIR *dir = opendir("database");
+    if (!dir) {
+        printf("Database folder not found.\n");
         return;
     }
-    clearInputBuffer();
-    
-    // Get PIN
-    do {
-        printf("Enter your 4-digit PIN: ");
-        if (scanf("%d", &pin) != 1 || pin < 1000 || pin > 9999) {
-            printf("Invalid PIN. Must be 4 digits.\n");
-            clearInputBuffer();
-        } else {
+
+    struct dirent *entry;
+    int fileFound = 0;
+    while ((entry = readdir(dir)) != NULL) {
+        if (entry->d_type == DT_REG && strstr(entry->d_name, ".txt") != NULL && strcmp(entry->d_name, "index.txt") != 0) {
+            fileFound = 1;
             break;
         }
-    } while (1);
+    }
+    closedir(dir);
+
+    if (!fileFound) {
+        printf("No accounts found.\n");
+        return;
+    }
+
+    printf("Enter Account Number: ");
+    if (scanf("%ld", &accNumber) != 1) { 
+        printf("Invalid input.\n"); 
+        clearInputBuffer(); 
+        return; 
+    }
+
+    printf("Enter 4-digit PIN: ");
+    if (scanf("%d", &pin) != 1) {
+        printf("Invalid PIN.\n"); 
+        clearInputBuffer(); 
+        return; 
+    }
     clearInputBuffer();
-    
-    // Check if account exists
-    sprintf(filename, "database/%ld.txt", accountNumber);
-    FILE *file = fopen(filename, "r");
-    if (!file) {
+
+    if (getAccountBalance(accNumber, &balance) != 0) {
         printf("Account not found.\n");
         return;
     }
-    
-    // Read account info
+
+    // Verify PIN
+    char filename[100];
+    sprintf(filename, "database/%ld.txt", accNumber);
+    FILE *file = fopen(filename, "r");
+    if (!file) return;
+
     int storedPIN = -1;
-    currentBalance = -1;
-    char name[50], accountType[20];
-    int id;
-    
+    char line[256];
     while (fgets(line, sizeof(line), file)) {
-        if (strstr(line, "PIN:") != NULL) sscanf(line, "PIN: %d", &storedPIN);
-        else if (strstr(line, "Balance:") != NULL) sscanf(line, "Balance: %lf", &currentBalance);
-        else if (strstr(line, "Name:") != NULL) sscanf(line, "Name: %49[^\n]", name);
-        else if (strstr(line, "Account Type:") != NULL) sscanf(line, "Account Type: %19[^\n]", accountType);
-        else if (strstr(line, "ID:") != NULL) sscanf(line, "ID: %d", &id);
+        if (sscanf(line, "PIN: %d", &storedPIN) == 1) break;
     }
     fclose(file);
-    
-    // Verify PIN
+
     if (pin != storedPIN) {
-        printf("Wrong PIN.\n");
+        printf("Incorrect PIN.\n");
         return;
     }
-    
-    printf("Current balance: RM %.2f\n", currentBalance);
-    
-    // Get amount
-    printf("Enter amount to withdraw: RM ");
-    if (scanf("%lf", &amount) != 1) {
-        printf("Invalid amount.\n");
+
+    printf("Current balance: RM%.2f\n", balance);
+
+    printf("Enter amount to withdraw: RM");
+    if (scanf("%lf", &amount) != 1 || amount <= 0 || amount > balance) {
+        printf("Invalid or insufficient amount.\n");
         clearInputBuffer();
         return;
     }
     clearInputBuffer();
-    
-    // Validate amount
-    if (amount <= 0) {
-        printf("Amount must be greater than 0.\n");
+
+    balance -= amount;
+
+    if (updateAccountBalance(accNumber, balance) != 0) {
+        printf("Error updating balance.\n");
         return;
     }
-    
-    if (amount > currentBalance) {
-        printf("Insufficient funds.\n");
-        return;
-    }
-    
-    // Update balance
-    double newBalance = currentBalance - amount;
-    
-    file = fopen(filename, "w");
-    if (!file) {
-        printf("Error updating account.\n");
-        return;
-    }
-    
-    // Write updated account info
-    fprintf(file, "Account Number: %ld\n", accountNumber);
-    fprintf(file, "Name: %s\n", name);
-    fprintf(file, "ID: %d\n", id);
-    fprintf(file, "Account Type: %s\n", accountType);
-    fprintf(file, "PIN: %d\n", pin);
-    fprintf(file, "Balance: %.2f\n", newBalance);
-    fclose(file);
-    
-    // Log transaction
-    logTransaction("withdrawal", accountNumber, amount);
-    
-    printf("Withdrawal successful! New balance: RM %.2f\n", newBalance);
+
+    printf("Withdrawal successful! New balance: RM%.2f\n", balance);
+    logTransaction("withdrawal", accNumber, amount);
 }
 
 #endif

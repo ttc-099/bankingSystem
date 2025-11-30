@@ -13,3 +13,13 @@
 [2025-11-24 21:52:36] session ended - Account: 0 - Amount: RM 0.00
 [2025-11-24 21:58:40] create_account - Account: 1007429 - Amount: RM 0.00
 [2025-11-24 21:59:18] deposit - Account: 1007429 - Amount: RM 250.00
+[2025-11-25 08:58:41] create_account - Account: 10026471 - Amount: RM 0.00
+[2025-11-30 15:54:40] create_account - Account: 1023317 - Amount: RM 0.00
+[2025-11-30 15:55:30] create_account - Account: 100013469 - Amount: RM 0.00
+[2025-11-30 16:51:13] create_account - Account: 100001691 - Amount: RM 0.00
+[2025-11-30 16:51:41] delete_account - Account: 100001691 - Amount: RM 0.00
+[2025-11-30 17:14:15] create_account - Account: 100006204 - Amount: RM 0.00
+[2025-11-30 17:15:23] delete_account - Account: 100006204 - Amount: RM 0.00
+[2025-11-30 17:32:28] create_account - Account: 100009774 - Amount: RM 0.00
+[2025-11-30 17:32:53] deposit - Account: 100009774 - Amount: RM 25000.00
+[2025-11-30 17:37:55] create_account - Account: 100010841 - Amount: RM 0.00

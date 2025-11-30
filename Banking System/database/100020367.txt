@@ -1,6 +1,0 @@
-Account Number: 100020367
-Name: qwerty 
-ID: 1234
-Account Type: Savings
-PIN: 1234
-Balance: 0.00

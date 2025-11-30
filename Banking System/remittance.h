@@ -5,106 +5,111 @@
 #include <stdlib.h>
 #include <string.h>
 #include <time.h>
-#include "helpers.h"
+#include "helpers_DepositWithdraw.h"  
+#include <dirent.h>
 
 void remittance(void) {
-    long senderAccount, receiverAccount;
-    int senderPIN;
-    double amount;
-    double senderBalance, receiverBalance;
-    char filename[100];
-    char line[256];
-    
+    char senderAccStr[20], receiverAccStr[20];
+    char senderID[13], receiverID[13];
+    char senderName[50], receiverName[50];
+    char senderType[20], receiverType[20];
+    int senderPIN, receiverPIN;
+    double senderBalance = 0.0, receiverBalance = 0.0;
+    double amount, fee = 0.0, totalDeduction;
+    char line[256], filename[100];
+
     printf("\n=== REMITTANCE (TRANSFER) ===\n");
-    
-    // Get sender account number
-    printf("Enter your account number (sender): ");
-    if (scanf("%ld", &senderAccount) != 1) {
-        printf("Invalid account number.\n");
+
+        // --- Early check: does database folder contain any .txt account files? ---
+    DIR *dir = opendir("database");
+    if (!dir) {
+        printf("Database folder not found.\n");
+        return;
+    }
+
+    struct dirent *entry;
+    int fileFound = 0;
+    while ((entry = readdir(dir)) != NULL) {
+        if (entry->d_type == DT_REG && strstr(entry->d_name, ".txt") != NULL && strcmp(entry->d_name, "index.txt") != 0) {
+            fileFound = 1;
+            break;
+        }
+    }
+    closedir(dir);
+
+    if (!fileFound) {
+        printf("No accounts found.\n");
+        return;
+    }
+
+    // --- Sender account ---
+    printf("Enter sender account number: ");
+    if (scanf("%19s", senderAccStr) != 1) {
+        printf("Invalid input.\n");
         clearInputBuffer();
         return;
     }
     clearInputBuffer();
-    
-    // Get sender PIN
-    printf("Enter your 4-digit PIN: ");
+
+    printf("Enter 4-digit PIN: ");
     if (scanf("%d", &senderPIN) != 1 || senderPIN < 1000 || senderPIN > 9999) {
-        printf("Invalid PIN. Must be 4 digits.\n");
+        printf("Invalid PIN.\n");
         clearInputBuffer();
         return;
     }
     clearInputBuffer();
-    
-    // Check if sender account exists and authenticate
-    sprintf(filename, "database/%ld.txt", senderAccount);
-    FILE *senderFile = fopen(filename, "r");
-    if (!senderFile) {
+
+    sprintf(filename, "database/%s.txt", senderAccStr);
+    FILE *file = fopen(filename, "r");
+    if (!file) {
         printf("Sender account not found.\n");
         return;
     }
-    
-    // Read sender account info
-    int storedSenderPIN = -1;
-    senderBalance = -1;
-    char senderName[50], senderAccType[20];
-    int senderID;
-    
-    while (fgets(line, sizeof(line), senderFile)) {
-        if (strstr(line, "PIN:") != NULL) sscanf(line, "PIN: %d", &storedSenderPIN);
+
+    while (fgets(line, sizeof(line), file)) {
+        if (strstr(line, "Name:") != NULL) sscanf(line, "Name: %49[^\n]", senderName);
+        else if (strstr(line, "ID:") != NULL) sscanf(line, "ID: %12s", senderID);
+        else if (strstr(line, "Account Type:") != NULL) sscanf(line, "Account Type: %19[^\n]", senderType);
+        else if (strstr(line, "PIN:") != NULL) sscanf(line, "PIN: %d", &senderPIN);
         else if (strstr(line, "Balance:") != NULL) sscanf(line, "Balance: %lf", &senderBalance);
-        else if (strstr(line, "Name:") != NULL) sscanf(line, "Name: %49[^\n]", senderName);
-        else if (strstr(line, "Account Type:") != NULL) sscanf(line, "Account Type: %19[^\n]", senderAccType);
-        else if (strstr(line, "ID:") != NULL) sscanf(line, "ID: %d", &senderID);
     }
-    fclose(senderFile);
-    
-    // Verify sender PIN
-    if (senderPIN != storedSenderPIN) {
-        printf("Wrong PIN for sender account.\n");
-        return;
-    }
-    
-    // Get receiver account number
+    fclose(file);
+
+    printf("Sender current balance: RM %.2f\n", senderBalance);
+
+    // --- Receiver account ---
     printf("Enter receiver account number: ");
-    if (scanf("%ld", &receiverAccount) != 1) {
-        printf("Invalid receiver account number.\n");
+    if (scanf("%19s", receiverAccStr) != 1) {
+        printf("Invalid input.\n");
         clearInputBuffer();
         return;
     }
     clearInputBuffer();
-    
-    // Validate accounts are distinct
-    if (senderAccount == receiverAccount) {
+
+    if (strcmp(senderAccStr, receiverAccStr) == 0) {
         printf("Cannot transfer to the same account.\n");
         return;
     }
-    
-    // Check if receiver account exists
-    sprintf(filename, "database/%ld.txt", receiverAccount);
-    FILE *receiverFile = fopen(filename, "r");
-    if (!receiverFile) {
+
+    sprintf(filename, "database/%s.txt", receiverAccStr);
+    file = fopen(filename, "r");
+    if (!file) {
         printf("Receiver account not found.\n");
         return;
     }
-    
-    // Read receiver account info
-    receiverBalance = -1;
-    char receiverName[50], receiverAccType[20];
-    int receiverID, receiverPIN;
-    
-    while (fgets(line, sizeof(line), receiverFile)) {
-        if (strstr(line, "Balance:") != NULL) sscanf(line, "Balance: %lf", &receiverBalance);
-        else if (strstr(line, "Name:") != NULL) sscanf(line, "Name: %49[^\n]", receiverName);
-        else if (strstr(line, "Account Type:") != NULL) sscanf(line, "Account Type: %19[^\n]", receiverAccType);
-        else if (strstr(line, "ID:") != NULL) sscanf(line, "ID: %d", &receiverID);
+
+    while (fgets(line, sizeof(line), file)) {
+        if (strstr(line, "Name:") != NULL) sscanf(line, "Name: %49[^\n]", receiverName);
+        else if (strstr(line, "ID:") != NULL) sscanf(line, "ID: %12s", receiverID);
+        else if (strstr(line, "Account Type:") != NULL) sscanf(line, "Account Type: %19[^\n]", receiverType);
         else if (strstr(line, "PIN:") != NULL) sscanf(line, "PIN: %d", &receiverPIN);
+        else if (strstr(line, "Balance:") != NULL) sscanf(line, "Balance: %lf", &receiverBalance);
     }
-    fclose(receiverFile);
-    
-    printf("Sender current balance: RM %.2f\n", senderBalance);
+    fclose(file);
+
     printf("Receiver account found: %s\n", receiverName);
-    
-    // Get transfer amount
+
+    // --- Transfer amount ---
     printf("Enter amount to transfer: RM ");
     if (scanf("%lf", &amount) != 1) {
         printf("Invalid amount.\n");
@@ -112,54 +117,47 @@ void remittance(void) {
         return;
     }
     clearInputBuffer();
-    
-    // Validate amount
+
     if (amount <= 0) {
         printf("Amount must be greater than 0.\n");
         return;
     }
-    
-    // Calculate remittance fee based on account types
-    double fee = 0.0;
-    double totalDeduction = amount;
-    
-    if (strcmp(senderAccType, "Savings") == 0 && strcmp(receiverAccType, "Current") == 0) {
+
+    // --- Fee calculation ---
+    fee = 0.0;
+    totalDeduction = amount;
+
+    if (strcmp(senderType, "Savings") == 0 && strcmp(receiverType, "Current") == 0) {
         fee = amount * 0.02;
-        totalDeduction = amount + fee;
-        printf("Remittance fee (2%%): RM %.2f\n", fee);
-    } else if (strcmp(senderAccType, "Current") == 0 && strcmp(receiverAccType, "Savings") == 0) {
+        totalDeduction += fee;
+    } else if (strcmp(senderType, "Current") == 0 && strcmp(receiverType, "Savings") == 0) {
         fee = amount * 0.03;
-        totalDeduction = amount + fee;
-        printf("Remittance fee (3%%): RM %.2f\n", fee);
+        totalDeduction += fee;
     }
-    
-    // Check if sender has sufficient funds (amount + fee)
+
     if (totalDeduction > senderBalance) {
-        printf("Insufficient funds. You need RM %.2f (amount + fee) but have RM %.2f\n", 
-               totalDeduction, senderBalance);
+        printf("Insufficient funds. Required: RM %.2f, Available: RM %.2f\n", totalDeduction, senderBalance);
         return;
     }
-    
-    // Calculate new balances
+
+    // --- Update balances ---
     double newSenderBalance = senderBalance - totalDeduction;
     double newReceiverBalance = receiverBalance + amount;
-    
-    // Update sender account
-    updateAccountFile(senderAccount, senderName, senderID, senderAccType, senderPIN, newSenderBalance);
-    
-    // Update receiver account  
-    updateAccountFile(receiverAccount, receiverName, receiverID, receiverAccType, receiverPIN, newReceiverBalance);
-    
-    // Log transactions
-    logTransaction("remittance_out", senderAccount, -totalDeduction);
-    logTransaction("remittance_in", receiverAccount, amount);
-    
-    printf("Transfer successful!\n");
+
+    long senderAcc = atol(senderAccStr);
+    long receiverAcc = atol(receiverAccStr);
+
+    updateAccountFile(senderAcc, senderName, senderID, senderType, senderPIN, newSenderBalance);
+    updateAccountFile(receiverAcc, receiverName, receiverID, receiverType, receiverPIN, newReceiverBalance);
+
+    // --- Log transactions ---
+    logTransaction("remittance_out", senderAcc, -totalDeduction);
+    logTransaction("remittance_in", receiverAcc, amount);
+
+    printf("\nTransfer successful!\n");
     printf("New sender balance: RM %.2f\n", newSenderBalance);
     printf("Amount transferred to %s: RM %.2f\n", receiverName, amount);
-    if (fee > 0) {
-        printf("Remittance fee charged: RM %.2f\n", fee);
-    }
+    if (fee > 0) printf("Remittance fee charged: RM %.2f\n", fee);
 }
 
 #endif
