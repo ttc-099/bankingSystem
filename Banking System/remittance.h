@@ -8,6 +8,9 @@
 #include "helpers_DepositWithdraw.h"  
 #include <dirent.h>
 
+// --------------------------------------------------
+// Remittance (Transfer) between two accounts
+// --------------------------------------------------
 void remittance(void) {
     char senderAccStr[20], receiverAccStr[20];
     char senderID[13], receiverID[13];
@@ -20,7 +23,9 @@ void remittance(void) {
 
     printf("\n=== REMITTANCE (TRANSFER) ===\n");
 
-        // --- Early check: does database folder contain any .txt account files? ---
+    // --------------------------------------------------
+    // Early check: ensure database folder has accounts
+    // --------------------------------------------------
     DIR *dir = opendir("database");
     if (!dir) {
         printf("Database folder not found.\n");
@@ -42,7 +47,9 @@ void remittance(void) {
         return;
     }
 
-    // --- Sender account ---
+    // --------------------------------------------------
+    // Sender Account: Input + Validation + Data Loading
+    // --------------------------------------------------
     printf("Enter sender account number: ");
     if (scanf("%19s", senderAccStr) != 1) {
         printf("Invalid input.\n");
@@ -66,6 +73,7 @@ void remittance(void) {
         return;
     }
 
+    // Load sender account data
     while (fgets(line, sizeof(line), file)) {
         if (strstr(line, "Name:") != NULL) sscanf(line, "Name: %49[^\n]", senderName);
         else if (strstr(line, "ID:") != NULL) sscanf(line, "ID: %12s", senderID);
@@ -77,7 +85,9 @@ void remittance(void) {
 
     printf("Sender current balance: RM %.2f\n", senderBalance);
 
-    // --- Receiver account ---
+    // --------------------------------------------------
+    // Receiver Account: Input + Validation + Data Loading
+    // --------------------------------------------------
     printf("Enter receiver account number: ");
     if (scanf("%19s", receiverAccStr) != 1) {
         printf("Invalid input.\n");
@@ -98,6 +108,7 @@ void remittance(void) {
         return;
     }
 
+    // Load receiver account data
     while (fgets(line, sizeof(line), file)) {
         if (strstr(line, "Name:") != NULL) sscanf(line, "Name: %49[^\n]", receiverName);
         else if (strstr(line, "ID:") != NULL) sscanf(line, "ID: %12s", receiverID);
@@ -109,7 +120,9 @@ void remittance(void) {
 
     printf("Receiver account found: %s\n", receiverName);
 
-    // --- Transfer amount ---
+    // --------------------------------------------------
+    // Enter transfer amount
+    // --------------------------------------------------
     printf("Enter amount to transfer: RM ");
     if (scanf("%lf", &amount) != 1) {
         printf("Invalid amount.\n");
@@ -123,7 +136,9 @@ void remittance(void) {
         return;
     }
 
-    // --- Fee calculation ---
+    // --------------------------------------------------
+    // Fee Calculation (based on account types)
+    // --------------------------------------------------
     fee = 0.0;
     totalDeduction = amount;
 
@@ -140,7 +155,9 @@ void remittance(void) {
         return;
     }
 
-    // --- Update balances ---
+    // --------------------------------------------------
+    // Update balances for both sender and receiver
+    // --------------------------------------------------
     double newSenderBalance = senderBalance - totalDeduction;
     double newReceiverBalance = receiverBalance + amount;
 
@@ -150,10 +167,15 @@ void remittance(void) {
     updateAccountFile(senderAcc, senderName, senderID, senderType, senderPIN, newSenderBalance);
     updateAccountFile(receiverAcc, receiverName, receiverID, receiverType, receiverPIN, newReceiverBalance);
 
-    // --- Log transactions ---
+    // --------------------------------------------------
+    // Log both sides of the transfer
+    // --------------------------------------------------
     logTransaction("remittance_out", senderAcc, -totalDeduction);
     logTransaction("remittance_in", receiverAcc, amount);
 
+    // --------------------------------------------------
+    // Final confirmation output
+    // --------------------------------------------------
     printf("\nTransfer successful!\n");
     printf("New sender balance: RM %.2f\n", newSenderBalance);
     printf("Amount transferred to %s: RM %.2f\n", receiverName, amount);

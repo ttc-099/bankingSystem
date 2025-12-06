@@ -5,11 +5,12 @@
 #include <stdlib.h>
 #include <string.h>
 #include <time.h>
+#include <math.h> 
 #include "helpers_CreateDelete.h"
 #include "helpers3.h"   // contains isValidIC()
 
 // ----------------------------------------------------------
-// Generate a random 9-digit account number that is unique
+// Generate a UNIQUE random account number (7–9 digits)
 // ----------------------------------------------------------
 static long generateAccNumber() {
     long accNumber;
@@ -20,13 +21,18 @@ static long generateAccNumber() {
     srand((unsigned int)time(NULL));
 
     do {
-        accNumber = rand() % 900000000 + 100000000; // 9-digit
+        // Generate a number between 7 and 9 digits
+        int digits = (rand() % 3) + 7;  // 7, 8, or 9
+        long min = (long) pow(10, digits - 1);
+        long max = (long) pow(10, digits) - 1;
+
+        accNumber = (rand() % (max - min + 1)) + min;
+
         unique = 1;
 
         indexFile = fopen("database/index.txt", "r");
         if (indexFile != NULL) {
             while (fgets(line, sizeof(line), indexFile)) {
-                line[strcspn(line, "\n")] = '\0';
                 if (atol(line) == accNumber) {
                     unique = 0;
                     break;
@@ -48,7 +54,7 @@ static void createAccount() {
 
     printf("\n=== CREATE NEW BANK ACCOUNT ===\n");
 
-    // --- Name ---
+    // NAME
     while (1) {
         printf("Enter full name (letters and spaces only): ");
         if (fgets(newAccount.name, sizeof(newAccount.name), stdin) == NULL) continue;
@@ -65,7 +71,7 @@ static void createAccount() {
         break;
     }
 
-    // --- IC ---
+    // IC
     char icInput[20];
     while (1) {
         printf("Enter Malaysian IC (12 digits, no hyphens): ");
@@ -78,11 +84,10 @@ static void createAccount() {
         }
         strncpy(newAccount.id, icInput, sizeof(newAccount.id) - 1);
         newAccount.id[sizeof(newAccount.id) - 1] = '\0';
-
         break;
     }
 
-    // --- Account type ---
+    // ACCOUNT TYPE
     int type;
     while (1) {
         printf("Select account type [1] Savings  [2] Current: ");
@@ -96,7 +101,7 @@ static void createAccount() {
         break;
     }
 
-    // --- PIN (strictly 4-digit numeric) ---
+    // PIN
     char pinInput[10];
     int pin;
     while (1) {
@@ -104,7 +109,6 @@ static void createAccount() {
         if (fgets(pinInput, sizeof(pinInput), stdin) == NULL) continue;
         pinInput[strcspn(pinInput, "\n")] = '\0';
 
-        // Check if all digits
         int valid = 1;
         for (int i = 0; pinInput[i] != '\0'; i++) {
             if (!isdigit(pinInput[i])) { valid = 0; break; }
@@ -125,10 +129,10 @@ static void createAccount() {
         break;
     }
 
-    // --- Generate account number ---
+    // ACCOUNT NUMBER
     newAccount.accountNumber = generateAccNumber();
 
-    // --- Write account file ---
+    // WRITE FILE
     char filename[100];
     sprintf(filename, "database/%ld.txt", newAccount.accountNumber);
 
@@ -141,12 +145,13 @@ static void createAccount() {
     fprintf(file, "Account Number: %ld\n", newAccount.accountNumber);
     fprintf(file, "Name: %s\n", newAccount.name);
     fprintf(file, "ID: %s\n", newAccount.id);
-    fprintf(file, "Account Type: %s\n", newAccount.accountType == 1 ? "Savings" : "Current");
+    fprintf(file, "Account Type: %s\n",
+            newAccount.accountType == 1 ? "Savings" : "Current");
     fprintf(file, "PIN: %d\n", newAccount.pin);
     fprintf(file, "Balance: %.2f\n", newAccount.balance);
     fclose(file);
 
-    // --- Append to index file ---
+    // UPDATE INDEX
     FILE *indexFile = fopen("database/index.txt", "a");
     if (indexFile != NULL) {
         fprintf(indexFile, "%ld\n", newAccount.accountNumber);
@@ -155,8 +160,10 @@ static void createAccount() {
         printf("Warning: Unable to update index file.\n");
     }
 
+    // LOG
     logTransaction("create_account", newAccount.accountNumber, 0.0);
 
+    // DONE
     printf("\nAccount created successfully.\n");
     printf("Assigned Account Number: %ld\n", newAccount.accountNumber);
     printf("Record saved to: %s\n", filename);

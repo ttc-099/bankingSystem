@@ -6,6 +6,9 @@
 #include "helpers_DepositWithdraw.h"
 #include <dirent.h>
 
+// --------------------------------------------------
+// Deposit money into an existing account
+// --------------------------------------------------
 void deposit() {
     char accInput[20];
     int pin;
@@ -14,7 +17,9 @@ void deposit() {
 
     printf("\n=== DEPOSIT ===\n");
 
-        // --- Early check: does database folder contain any .txt account files? ---
+    // --------------------------------------------------
+    // Early check: ensure database folder has account files
+    // --------------------------------------------------
     DIR *dir = opendir("database");
     if (!dir) {
         printf("Database folder not found.\n");
@@ -36,6 +41,9 @@ void deposit() {
         return;
     }
 
+    // --------------------------------------------------
+    // Ask for account number and PIN
+    // --------------------------------------------------
     printf("Enter Account Number: ");
     scanf("%19s", accInput);
 
@@ -45,13 +53,17 @@ void deposit() {
 
     long accNumber = atol(accInput);
 
-    // --- GET CURRENT BALANCE ---
+    // --------------------------------------------------
+    // Get current balance from account file
+    // --------------------------------------------------
     if (getAccountBalance(accNumber, &balance) != 0) {
         printf("Error: Account not found.\n");
         return;
     }
 
-    // --- PIN VERIFICATION ---
+    // --------------------------------------------------
+    // Verify PIN stored in the account file
+    // --------------------------------------------------
     char filename[100];
     sprintf(filename, "database/%ld.txt", accNumber);
 
@@ -70,7 +82,9 @@ void deposit() {
         return;
     }
 
-    // --- ASK DEPOSIT AMOUNT ---
+    // --------------------------------------------------
+    // Ask for deposit amount with validation
+    // --------------------------------------------------
     do {
         printf("Enter amount to deposit (max RM50,000): RM");
         if (scanf("%lf", &depositAmount) != 1 || depositAmount <= 0 || depositAmount > 50000) {
@@ -82,11 +96,17 @@ void deposit() {
 
     balance += depositAmount;
 
+    // --------------------------------------------------
+    // Update account balance in file
+    // --------------------------------------------------
     if (updateAccountBalance(accNumber, balance) != 0) {
         printf("Error updating balance.\n");
         return;
     }
 
+    // --------------------------------------------------
+    // Success message + log transaction
+    // --------------------------------------------------
     printf("Deposit successful! New balance: RM%.2f\n", balance);
     logTransaction("deposit", accNumber, depositAmount);
 }
