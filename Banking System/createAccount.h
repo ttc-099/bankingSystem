@@ -47,7 +47,6 @@ static void createAccount() {
     newAccount.balance = 0.0;
 
     printf("\n=== CREATE NEW BANK ACCOUNT ===\n");
-    clearInputBuffer();
 
     // --- Name ---
     while (1) {
@@ -77,7 +76,9 @@ static void createAccount() {
             printf("Invalid IC format or state code.\n");
             continue;
         }
-        strcpy(newAccount.id, icInput);
+        strncpy(newAccount.id, icInput, sizeof(newAccount.id) - 1);
+        newAccount.id[sizeof(newAccount.id) - 1] = '\0';
+
         break;
     }
 
@@ -139,7 +140,7 @@ static void createAccount() {
 
     fprintf(file, "Account Number: %ld\n", newAccount.accountNumber);
     fprintf(file, "Name: %s\n", newAccount.name);
-    fprintf(file, "IC: %s\n", newAccount.id);
+    fprintf(file, "ID: %s\n", newAccount.id);
     fprintf(file, "Account Type: %s\n", newAccount.accountType == 1 ? "Savings" : "Current");
     fprintf(file, "PIN: %d\n", newAccount.pin);
     fprintf(file, "Balance: %.2f\n", newAccount.balance);

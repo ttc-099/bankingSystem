@@ -1,4 +1,4 @@
-#ifndef DELETE_ACCOUNT_H
+#ifndef DELETE_ACCOUNT_H 
 #define DELETE_ACCOUNT_H
 
 #include <stdio.h>
@@ -76,30 +76,57 @@ static void deleteAccount() {
 
     // --- Confirm deletion ---
     char enteredAccount[20];
-    int last4ID, pin;
+    char enteredLast4[5];  // last 4 digits of IC as string
+    char storedID[20];     // full IC from account file
+    char storedPIN[10];    // stored PIN as string
+    int pin;
 
     printf("\nTo confirm deletion, enter the following:\n");
+
     printf("Account number: ");
     scanf("%19s", enteredAccount);
     clearInputBuffer();
 
     printf("Last 4 digits of your ID: ");
-    if (scanf("%d", &last4ID) != 1) { clearInputBuffer(); return; }
+    scanf("%4s", enteredLast4);
     clearInputBuffer();
 
     printf("4-digit PIN: ");
     if (scanf("%d", &pin) != 1) { clearInputBuffer(); return; }
     clearInputBuffer();
 
+    // --- Read full IC and PIN from account file ---
+    char filename[100];
+    sprintf(filename, "database/%s.txt", selectedAccount);
+    FILE *file = fopen(filename, "r");
+    if (!file) {
+        printf("Error: Account file not found.\n");
+        return;
+    }
+    char line[256];
+    while (fgets(line, sizeof(line), file)) {
+        if (strstr(line, "ID:") != NULL) sscanf(line, "ID: %19s", storedID);
+        if (strstr(line, "PIN:") != NULL) sscanf(line, "PIN: %9s", storedPIN);
+    }
+    fclose(file);
+
+    // --- Validate ---
     if (strcmp(selectedAccount, enteredAccount) != 0) {
         printf("\nError: Account number mismatch.\n");
         return;
     }
 
-    // --- Delete account file ---
-    char filename[100];
-    sprintf(filename, "database/%s.txt", selectedAccount);
+    char enteredPIN[5];
+    sprintf(enteredPIN, "%04d", pin);
 
+    // Compare last 4 digits of IC and PIN
+    if (strcmp(storedID + strlen(storedID) - 4, enteredLast4) != 0 ||
+        strcmp(storedPIN, enteredPIN) != 0) {
+        printf("\nError: Last 4 digits of ID or PIN do not match the records.\n");
+        return;
+    }
+
+    // --- Delete account file ---
     if (remove(filename) == 0) {
         printf("\nAccount file deleted successfully.\n");
 

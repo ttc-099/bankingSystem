@@ -21,7 +21,7 @@
 // -----------------------------
 typedef struct {
     char name[50];
-    char id[13];       // IC as string (12 digits + null terminator)
+    char id[20];       // IC as string (12 digits + null terminator)
     int accountType;
     int pin;
     long accountNumber;

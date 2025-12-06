@@ -1,6 +1,0 @@
-- the terminal spits out everything all at once and not in a clean 
-- validate id, pin, 
-- fix name 
-
-- include pseudocode :[]
-

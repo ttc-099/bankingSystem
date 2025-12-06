@@ -9,7 +9,7 @@
 // -----------------------------
 // Read account info into pointers
 // -----------------------------
-static int readAccount(long accountNumber, char *name, int *id, char *accountType, int *pin, double *balance) {
+static int readAccount(long accountNumber, char *name, char *id, char *accountType, int *pin, double *balance) {
     char filename[100];
     sprintf(filename, "database/%ld.txt", accountNumber);
 
@@ -19,7 +19,7 @@ static int readAccount(long accountNumber, char *name, int *id, char *accountTyp
     char line[256];
     while (fgets(line, sizeof(line), file)) {
         if (strstr(line, "Name:") != NULL) sscanf(line, "Name: %49[^\n]", name);
-        else if (strstr(line, "ID:") != NULL) sscanf(line, "ID: %d", id);
+        else if (strstr(line, "ID:") != NULL) sscanf(line, "ID: %12s", id);
         else if (strstr(line, "Account Type:") != NULL) sscanf(line, "Account Type: %19[^\n]", accountType);
         else if (strstr(line, "PIN:") != NULL) sscanf(line, "PIN: %d", pin);
         else if (strstr(line, "Balance:") != NULL) sscanf(line, "Balance: %lf", balance);

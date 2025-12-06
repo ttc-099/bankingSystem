@@ -1,6 +1,0 @@
-Account Number: 100010841
-Name: Tee Ann Smith
-IC: 060325010552
-Account Type: Savings
-PIN: 1234
-Balance: 0.00

@@ -4,15 +4,8 @@
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
+#include <ctype.h>
 
-/*
-    isValidIC
-    ---------
-    Validates Malaysian IC structure:
-    - Must be exactly 12 digits
-    - All characters must be numeric
-    - State code (digits 7-8) must be valid
-*/
 int isValidIC(const char *ic) {
 
     // --- Check length ---
@@ -21,69 +14,28 @@ int isValidIC(const char *ic) {
 
     // --- Check all digits ---
     for (int i = 0; i < 12; i++) {
-        if (ic[i] < '0' || ic[i] > '9')
+        if (!isdigit(ic[i]))
             return 0;
     }
 
-    // --- Validate state code ---
+    // --- Extract state code ---
     int stateCode = (ic[6] - '0') * 10 + (ic[7] - '0');
 
-    int validStates[] = {
-        1,2,3,4,5,6,7,8,9,
-        10,11,12,13,14,15,16,
-        21,22,23,24,25,26,27,
-        30,31,32,33,34,35,36,
-        40,41,42,43,44,45,46,
-        50,51,52,53,54,55,56
-    };
-
-    int found = 0;
-    for (int i = 0; i < sizeof(validStates)/sizeof(validStates[0]); i++) {
-        if (stateCode == validStates[i]) {
-            found = 1;
-            break;
-        }
+    // --- State code validity ---
+    // Ranges based on JPN documentation (Peninsula, Sabah, Sarawak, special)
+    if (!(
+        (stateCode >= 1  && stateCode <= 16) ||   // Peninsular Malaysia
+        (stateCode >= 21 && stateCode <= 29) ||   // Sabah
+        (stateCode >= 30 && stateCode <= 39) ||   // Sarawak
+        (stateCode >= 40 && stateCode <= 49) ||   // Special/Multi-purpose
+        (stateCode >= 50 && stateCode <= 59) ||   // KL/Sabah/Sarawak extensions
+        (stateCode >= 80 && stateCode <= 89) ||   // Sabah (extended)
+        (stateCode >= 90 && stateCode <= 99)      // Sarawak (extended)
+    )) {
+        return 0;
     }
 
-    return found;
+    return 1;   // IC is valid
 }
-
-/*
-    updateAccountFile
-    ------------------
-    Rewrites an existing account file with updated details.
-    Used by remittance(), withdraw(), deposit(), etc.
-*/
-
-/* hold on
-void updateAccountFile(long accountNumber,
-                       const char *name,
-                       long id,
-                       const char *accType,
-                       int pin,
-                       double balance)
-{
-    char filename[100];
-    sprintf(filename, "database/%ld.txt", accountNumber);
-
-    FILE *file = fopen(filename, "w");
-    if (!file) {
-        printf("Error: Could not update account file for %ld\n", accountNumber);
-        return;
-    }
-
-    fprintf(file, "Account Number: %ld\n", accountNumber);
-    fprintf(file, "Name: %s\n", name);
-    fprintf(file, "IC: %ld\n", id);
-    fprintf(file, "Account Type: %s\n", accType);
-    fprintf(file, "PIN: %d\n", pin);
-    fprintf(file, "Balance: %.2f\n", balance);
-
-    fclose(file);
-}
-
-*/
 
 #endif
-
-

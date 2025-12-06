@@ -4,67 +4,25 @@
 #include <time.h>
 
 #include "helpers_CreateDelete.h"
-#include "helpers_DepositWithdraw.h"
-#include "helpers_Remittance.h"   
-
 #include "createAccount.h"
 #include "deleteAccount.h"
 #include "deposit.h"
 #include "withdraw.h"
-#include "remittance.h"         
+#include "remittance.h"
 
-// --------------------------------------------------
-// Function Pointer Type for Banking Operations
-// --------------------------------------------------
-
-typedef void (*BankFunc)();
-
-// Map numeric/word commands → functions
-BankFunc bankingFunctions[] = {
-    createAccount,   // 1
-    deleteAccount,   // 2
-    deposit,         // 3
-    withdraw,        // 4
-    remittance       // 5
-};
-
-const char *wordCommands[] = {
-    "create",
-    "delete",
-    "deposit",
-    "withdraw",
-    "remittance"
-};
-
-#define NUM_FUNCTIONS (sizeof(bankingFunctions) / sizeof(bankingFunctions[0]))
-
-// --------------------------------------------------
-// Helper: Match word command to index
-// --------------------------------------------------
-int getWordCommandIndex(const char *input) {
-    for (int i = 0; i < NUM_FUNCTIONS; i++) {
-        if (strcasecmp(input, wordCommands[i]) == 0)
-            return i;
-    }
-    return -1;
-}
-
-// --------------------------------------------------
-// MAIN
-// --------------------------------------------------
 int main() {
     char input[20];
     int accountCount = 0;
-    time_t now = time(NULL);
-
     getAccountCount(&accountCount);
 
+    time_t now = time(NULL);
     printf("---- BANKING SYSTEM ----\n");
     printf("Session started: %s", ctime(&now));
     printf("Loaded accounts: %d\n\n", accountCount);
 
     while (1) {
-        printf("Welcome! Select an option:\n"
+        // --- Display menu ---
+        printf("Select an option:\n"
                "1. Create Account\n"
                "2. Delete Account\n"
                "3. Deposit\n"
@@ -80,32 +38,41 @@ int main() {
         }
         clearInputBuffer();
 
-        // --- Exit commands ---
-        if (strcasecmp(input, "quit") == 0 || strcasecmp(input, "exit") == 0 || strcmp(input, "6") == 0) {
+        // --- Quit options ---
+        if (strcmp(input, "6") == 0 || strcasecmp(input, "quit") == 0 || strcasecmp(input, "exit") == 0) {
             printf("Program exited. Have a good day!\n");
-            return 0;
+            break;
         }
 
-        // --- Numeric selection ---
-        int option = atoi(input);
-        if (option >= 1 && option <= NUM_FUNCTIONS) {
-            int idx = option - 1;
-            bankingFunctions[idx]();
-            getAccountCount(&accountCount);
-            printf("Current accounts: %d\n\n", accountCount);
+        // --- Numeric or keyword options ---
+        if (strcmp(input, "1") == 0 || strcasecmp(input, "create") == 0) {
+            // Case 1: Create account
+            createAccount();
+        } 
+        else if (strcmp(input, "2") == 0 || strcasecmp(input, "delete") == 0) {
+            // Case 2: Delete account
+            deleteAccount();
+        } 
+        else if (strcmp(input, "3") == 0 || strcasecmp(input, "deposit") == 0) {
+            // Case 3: Deposit
+            deposit();
+        } 
+        else if (strcmp(input, "4") == 0 || strcasecmp(input, "withdraw") == 0) {
+            // Case 4: Withdraw
+            withdraw();
+        } 
+        else if (strcmp(input, "5") == 0 || strcasecmp(input, "remit") == 0) {
+            // Case 5: Remittance
+            remittance();
+        } 
+        else {
+            printf("Invalid option. Please try again.\n\n");
             continue;
         }
 
-        // --- Word commands ---
-        int idx = getWordCommandIndex(input);
-        if (idx != -1) {
-            bankingFunctions[idx]();
-            getAccountCount(&accountCount);
-            printf("Current accounts: %d\n\n", accountCount);
-            continue;
-        }
-
-        printf("Invalid option. Please try again.\n\n");
+        // --- Update account count after each operation ---
+        getAccountCount(&accountCount);
+        printf("Current accounts: %d\n\n", accountCount);
     }
 
     return 0;
