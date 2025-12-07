@@ -54,22 +54,29 @@ static void createAccount() {
 
     printf("\n=== CREATE NEW BANK ACCOUNT ===\n");
 
-    // NAME
-    while (1) {
-        printf("Enter full name (letters and spaces only): ");
-        if (fgets(newAccount.name, sizeof(newAccount.name), stdin) == NULL) continue;
-        newAccount.name[strcspn(newAccount.name, "\n")] = '\0';
+// NAME
+while (1) {
+    printf("Enter full name (letters, spaces, and hyphens only): ");
+    if (fgets(newAccount.name, sizeof(newAccount.name), stdin) == NULL) continue;
 
-        int valid = 1;
-        for (int i = 0; newAccount.name[i] != '\0'; i++) {
-            if (isdigit(newAccount.name[i])) { valid = 0; break; }
+    newAccount.name[strcspn(newAccount.name, "\n")] = '\0';
+
+    int valid = 1;
+    for (int i = 0; newAccount.name[i] != '\0'; i++) {
+        char c = newAccount.name[i];
+        if (!isalpha(c) && c != ' ' && c != '-') {
+            valid = 0;
+            break;
         }
-        if (!valid || strlen(newAccount.name) == 0) {
-            printf("Invalid name.\n");
-            continue;
-        }
-        break;
     }
+
+    if (!valid || strlen(newAccount.name) == 0) {
+        printf("Invalid name.\n");
+        continue;
+    }
+    break;
+}
+
 
     // IC
     char icInput[20];
